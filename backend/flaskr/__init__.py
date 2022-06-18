@@ -60,22 +60,25 @@ def create_app(test_config=None):
 
     @app.route('/questions', methods=["GET"])
     def get_questions():
-
         page = request.args.get('page', 1, type=int)
         start = (page - 1) * QUESTIONS_PER_PAGE
         end = start + QUESTIONS_PER_PAGE
 
-        questions = Question.query.order_by(Question.id).all()
         categories = Category.query.all()
+        questions = Question.query.order_by(Question.id).all()
+        formatted_questions = [question.format() for question in questions]
 
-        return jsonify(
-            {
-                "questions": [question.format() for question in questions][start:end],
-                "totalQuestions": len(questions),
-                "categories": {category.id: category.type for category in categories},
-                "currentCategory": "category"  # CHANGE this
-            }
-        )
+        if len(questions) < start:
+            abort(422, description="page index out of range") # CHANGE
+        else:
+            return jsonify(
+                {
+                    "questions": formatted_questions[start:end],
+                    "totalQuestions": len(questions),
+                    "categories": {category.id: category.type for category in categories},
+                    "currentCategory": "category"  # CHANGE this
+                }
+            )
 
     """
     @TODO:
@@ -88,8 +91,11 @@ def create_app(test_config=None):
     @app.route('/questions/<int:question_id>', methods=['DELETE'])
     def delete_question(question_id):
 
-        question = Question.query.get(question_id)
-        question.delete()
+        try:
+            question = Question.query.get(question_id)
+            question.delete()
+        except AttributeError:
+            abort(422, description="question with id does not exist") # CHANGE
 
         return jsonify({'id': question_id})
 
@@ -139,10 +145,9 @@ def create_app(test_config=None):
                 return jsonify({"succes": True})
 
             except:
-                abort() # CHANGE this to include status code
-
+                abort(422, description="incomplete data") # CHANGE
         else:
-            abort() # CHANGE this to include status code
+            abort(422, description="post request to /questions should contain either searchTerm or Question")  # CHANGE
 
 
     """
@@ -157,13 +162,17 @@ def create_app(test_config=None):
     @app.route('/categories/<int:category_id>/questions', methods=['GET'])
     def get_questions_based_on_category(category_id):
 
-        questions = Question.query.filter(Question.category == category_id).all()
+        try:       
+            questions = Question.query.filter(Question.category == category_id).all()
+            current_category = Category.query.get(category_id).type
+        except AttributeError:
+            abort(422, description="category with id not found") # CHANGE
 
         return jsonify(
             {
                 "questions": [question.format() for question in questions],
                 "totalQuestions": len(questions),
-                "currentCategory": Category.query.get(category_id).type
+                "currentCategory": current_category
             }
         )
 
@@ -179,7 +188,7 @@ def create_app(test_config=None):
     and shown whether they were correct or not.
     """
 
-    @app.route('/quizzes', methods=['POST'])
+    @app.route('/quizzes', methods=['POST'])  # STILL working on this
     def get_next_question():
 
         data = request.json
@@ -206,6 +215,39 @@ def create_app(test_config=None):
     Create error handlers for all expected errors
     including 404 and 422.
     """
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            "success": False,
+            "error": 400,
+            "message": "Bad Request"
+        }), 400
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({
+            "success": False,
+            "error": 404,
+            "message": "Not Found"
+        }), 404
+
+    @app.errorhandler(422)
+    def unprocessable(error):
+        return jsonify({
+            "success": False,
+            "error": 422,
+            "message": "Unprocessable",
+            "Additional info": error.description
+        }), 422
+
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        return jsonify({
+            "success": False,
+            "error": 500,
+            "message": "Internal Server Error"
+        }), 500
 
     return app
 
