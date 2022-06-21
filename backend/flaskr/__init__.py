@@ -1,9 +1,10 @@
 import os
 from unicodedata import category
+from urllib import response
+import random
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import random
 
 from models import setup_db, Question, Category
 
@@ -38,10 +39,11 @@ def create_app(test_config=None):
     def get_categories():
 
         categories = Category.query.all()
+        categories = {category.id: category.type for category in categories}
 
         return jsonify(
             {
-                'categories': {category.id: category.type for category in categories}
+                'categories': categories
             }
         )
 
@@ -65,18 +67,19 @@ def create_app(test_config=None):
         end = start + QUESTIONS_PER_PAGE
 
         categories = Category.query.all()
+        categories = {category.id: category.type for category in categories}
         questions = Question.query.order_by(Question.id).all()
         formatted_questions = [question.format() for question in questions]
 
         if len(questions) < start:
-            abort(422, description="page index out of range") # CHANGE
+            abort(404)
         else:
             return jsonify(
                 {
                     "questions": formatted_questions[start:end],
                     "totalQuestions": len(questions),
-                    "categories": {category.id: category.type for category in categories},
-                    "currentCategory": "category"  # CHANGE this
+                    "categories": categories,
+                    "currentCategory": None
                 }
             )
 
@@ -95,7 +98,7 @@ def create_app(test_config=None):
             question = Question.query.get(question_id)
             question.delete()
         except AttributeError:
-            abort(422, description="question with id does not exist") # CHANGE
+            abort(422, description="question with id provided does not exist")
 
         return jsonify({'id': question_id})
 
@@ -125,15 +128,17 @@ def create_app(test_config=None):
     def add_or_search_question():
 
         data = request.json
+        print (data)
 
         if "searchTerm" in data.keys():
-            questions = Question.query.filter(Question.question.ilike("%%%s%%" % data["searchTerm"])).all()
+            term = data["searchTerm"]
+            questions = Question.query.filter(Question.question.ilike(f"%{term}%")).all()
 
             return jsonify(
                 {
                     "questions": [question.format() for question in questions],
                     "totalQuestions": len(questions),
-                    "currentCategory": 'category' # CHANGE this
+                    "currentCategory": None
                 }
             )
 
@@ -142,12 +147,12 @@ def create_app(test_config=None):
                 question = Question(**{i:data[i] for i in data})
                 question.insert()
 
-                return jsonify({"succes": True})
+                return jsonify({"success": True})
 
-            except:
-                abort(422, description="incomplete data") # CHANGE
+            except TypeError:
+                abort(400, description="Incomplete Data: Request to this endpoint should contain question, answer, difficulty and category")
         else:
-            abort(422, description="post request to /questions should contain either searchTerm or Question")  # CHANGE
+            abort(400, description="Incomplete Data: POST request to /questions should contain either searchTerm or Question")
 
 
     """
@@ -166,7 +171,7 @@ def create_app(test_config=None):
             questions = Question.query.filter(Question.category == category_id).all()
             current_category = Category.query.get(category_id).type
         except AttributeError:
-            abort(422, description="category with id not found") # CHANGE
+            abort(422, description="category with id specified does not exist")
 
         return jsonify(
             {
@@ -188,26 +193,25 @@ def create_app(test_config=None):
     and shown whether they were correct or not.
     """
 
-    @app.route('/quizzes', methods=['POST'])  # STILL working on this
+    @app.route('/quizzes', methods=['POST'])
     def get_next_question():
 
         data = request.json
-
-        category = data["quiz_category"]["id"]
+        category_id = data["quiz_category"]["id"]
         previous_questions_id = data["previous_questions"]
 
-        previous_questions = [Question.query.get(i) for i in previous_questions_id]
-
-        if category != 0:
-            questions_in_category = Question.query.filter(Question.category == category).all() #.filter(Question.id not in previous_questions_id).all()
-            breakpoint()
-            print (questions_in_category)
+        if category_id != 0:
+            questions_left_in_category = Question.query.filter(
+                Question.category == category_id).filter(
+                    Question.id.notin_(previous_questions_id)).all()
         else:
-            questions_in_category = Question.query.filter(Question.id not in previous_questions_id).all()
+            questions_left_in_category = Question.query.filter(
+                Question.id.notin_(previous_questions_id)).all()
 
-        response = [question.format() for question in questions_in_category]
+        question = random.choice(questions_left_in_category).format() if len(
+            questions_left_in_category) else False
 
-        return jsonify({"question" : random.choice(response)})
+        return jsonify({"question" : question})
        
 
     """
@@ -221,7 +225,8 @@ def create_app(test_config=None):
         return jsonify({
             "success": False,
             "error": 400,
-            "message": "Bad Request"
+            "message": "Bad Request",
+            "Additional info": error.description
         }), 400
 
     @app.errorhandler(404)
@@ -229,7 +234,7 @@ def create_app(test_config=None):
         return jsonify({
             "success": False,
             "error": 404,
-            "message": "Not Found"
+            "message": "Page Not Found"
         }), 404
 
     @app.errorhandler(422)
