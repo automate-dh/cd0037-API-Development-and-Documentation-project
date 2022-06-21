@@ -16,5 +16,5 @@ frontend/node_modules/
 
 # Hidden Files       #
 ######################
-.configure
-.hide
+backend/.configure
+backend/.hide
