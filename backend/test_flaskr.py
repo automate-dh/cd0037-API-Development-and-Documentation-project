@@ -77,7 +77,7 @@ class TriviaTestCase(unittest.TestCase):
 
     # <<<<<<<<<<<<=========== [4] POST /questions ==================>>>>>>>>>>>
     def test_post_question(self):
-        """test add question and search questions"""
+        """test POST /questions """
         response = self.client().post('/questions', json={
             "question": "Heres a new question string",
             "answer": "Heres a new answer string",
@@ -87,15 +87,7 @@ class TriviaTestCase(unittest.TestCase):
         json_response = json.loads(response.get_data(as_text=True))
         self.assertEqual(response.status_code, 200)
 
-    def  test_search_keyword_in_question(self):
-        """test search for searchTerm in questions"""
-        response = self.client().post('/questions', json={
-            "searchTerm": "this is the term the user is looking for"
-        })
-        json_response = json.loads(response.get_data(as_text=True))
-        self.assertEqual(response.status_code, 200)
-
-    def test_422_post_incomplete_data(self):
+    def test_adding_question_with_incomplete_data(self):
         """test add questions endpoint passing incomplete data"""
         response = self.client().post('/questions',  json={
             "question": "Heres a new question string",
@@ -105,18 +97,24 @@ class TriviaTestCase(unittest.TestCase):
         json_response = json.loads(response.get_data(as_text=True))
         self.assertEqual(response.status_code, 400)
         self.assertEqual(json_response['Additional info'],
-            'Incomplete Data: Request to this endpoint should contain question, answer, difficulty and category')
+            'Incomplete Data: Requests to this endpoint should contain question, answer, difficulty and category')
 
-    def test_422_search_term_absent(self):
-        """test searching for keyword in question without passing searchTerm"""
-        response = self.client().post('/questions',  json={
-            "difficulty": 1,
-            "category": 3
+    # <<<<<<<<<<<<=========== [5] POST /questions/search ==================>>>>>>>>>>>
+    def  test_search_keyword_in_question(self):
+        """test search for searchTerm in questions"""
+        response = self.client().post('/questions/search', json={
+            "searchTerm": "this is the term the user is looking for"
         })
+        json_response = json.loads(response.get_data(as_text=True))
+        self.assertEqual(response.status_code, 200)
+
+    def test_searching_with_search_term_absent(self):
+        """test searching for keyword in question without passing searchTerm"""
+        response = self.client().post('/questions/search',  json={})
         json_response = json.loads(response.get_data(as_text=True))
         self.assertEqual(response.status_code, 400)
         self.assertEqual(json_response['Additional info'],
-            'Incomplete Data: POST request to /questions should contain either searchTerm or Question')
+            'Incomplete Data: Requests to this endpoint should contain searchTerm')
 
     # <<<<<<<<<<<<=========== [5] GET /categories/<int:category_id>/questions ==================>>>>>>>>>>>
     def test_get_category_questions(self):
@@ -136,8 +134,18 @@ class TriviaTestCase(unittest.TestCase):
      # <<<<<<<<<<<<=========== [6] POST /quizzes ==================>>>>>>>>>>>
     def test_post_quizzes(self):
         """test POST /quizzes"""
-
-        self.assertEqual(1, 1)
+        previous_questions =[22]
+        response = self.client().post('/quizzes', json={
+            "previous_questions": previous_questions,
+            "quiz_category":{
+                "type":"Science",
+                "id":"1"
+            }
+        })
+        json_response = json.loads(response.get_data(as_text=True))
+        next_question = json_response["question"]["id"]
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(next_question not in previous_questions)
 
 # Make the tests conveniently executable
 if __name__ == "__main__":

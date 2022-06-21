@@ -100,19 +100,10 @@ def create_app(test_config=None):
         except AttributeError:
             abort(422, description="question with id provided does not exist")
 
-        return jsonify({'id': question_id})
-
-    """
-    @TODO:
-    Create an endpoint to POST a new question,
-    which will require the question and answer text,
-    category, and difficulty score.
-
-    TEST: When you submit a question on the "Add" tab,
-    the form will clear and the question will appear at the end of the last page
-    of the questions list in the "List" tab.
-    """
-
+        return jsonify({
+            'id': question_id,
+            'deleted': True
+            })
     """
     @TODO:
     Create a POST endpoint to get questions based on a search term.
@@ -124,17 +115,16 @@ def create_app(test_config=None):
     Try using the word "title" to start.
     """
 
-    @app.route('/questions', methods=['POST'])
-    def add_or_search_question():
-
+    @app.route('/questions/search', methods=['POST'])
+    def search_questions():
         data = request.json
-        print (data)
+        try:
+            search_term = data["searchTerm"]              
+            questions = Question.query.filter(Question.question.ilike(f"%{search_term}%")).all()
+        except KeyError:
+            abort(400, description="Incomplete Data: Requests to this endpoint should contain searchTerm")
 
-        if "searchTerm" in data.keys():
-            term = data["searchTerm"]
-            questions = Question.query.filter(Question.question.ilike(f"%{term}%")).all()
-
-            return jsonify(
+        return jsonify(
                 {
                     "questions": [question.format() for question in questions],
                     "totalQuestions": len(questions),
@@ -142,18 +132,27 @@ def create_app(test_config=None):
                 }
             )
 
-        elif "question" in data.keys():
-            try:
-                question = Question(**{i:data[i] for i in data})
-                question.insert()
+    """
+    @TODO:
+    Create an endpoint to POST a new question,
+    which will require the question and answer text,
+    category, and difficulty score.
 
-                return jsonify({"success": True})
+    TEST: When you submit a question on the "Add" tab,
+    the form will clear and the question will appear at the end of the last page
+    of the questions list in the "List" tab.
+    """
+    @app.route('/questions', methods=['POST'])
+    def add_question():
+        data = request.json
+ 
+        try:
+            question = Question(**{i:data[i] for i in data})
+            question.insert()
 
-            except TypeError:
-                abort(400, description="Incomplete Data: Request to this endpoint should contain question, answer, difficulty and category")
-        else:
-            abort(400, description="Incomplete Data: POST request to /questions should contain either searchTerm or Question")
-
+            return jsonify({"success": True})
+        except TypeError:
+            abort(400, description=str(data)) #"Incomplete Data: Requests to this endpoint should contain question, answer, difficulty and category")
 
     """
     @TODO:
