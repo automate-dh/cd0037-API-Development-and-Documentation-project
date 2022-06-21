@@ -13,3 +13,8 @@ ehthumbs.db
 Thumbs.db
 env/
 frontend/node_modules/
+
+# Hidden Files       #
+######################
+.configure
+.hide
