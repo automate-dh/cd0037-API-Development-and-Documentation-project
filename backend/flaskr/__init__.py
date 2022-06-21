@@ -152,7 +152,7 @@ def create_app(test_config=None):
 
             return jsonify({"success": True})
         except TypeError:
-            abort(400, description=str(data)) #"Incomplete Data: Requests to this endpoint should contain question, answer, difficulty and category")
+            abort(400, description="Incomplete Data: Requests to this endpoint should contain question, answer, difficulty and category")
 
     """
     @TODO:
