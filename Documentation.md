@@ -42,8 +42,8 @@ The API will return three error types when requests fail:
 
 #### GET /questions
 - General:
-        - This endpoint returns list of questions, number of total questions, current category, categories
-        - Results are paginated in groups of 8. Include a request argument (page) to choose page number, starting from and defaults to 1
+    - This endpoint returns list of questions, number of total questions, current category, categories
+    - Results are paginated in groups of 8. Include a request argument (page) to choose page number, starting from and defaults to 1
 - Sample: curl http://localhost:5000/questions?page=2
 
 - Response:
@@ -136,7 +136,7 @@ The API will return three error types when requests fail:
 
 #### DELETE /questions/question_id
 - General:
-        - This endpoint deletes question using question id
+    - This endpoint deletes question using question id
 - Sample: curl -X DELETE http://localhost:5000/questions/32
 - Response:
         ```
@@ -148,8 +148,8 @@ The API will return three error types when requests fail:
 
 #### POST /questions/search
 - General:
-        - This endpoint gets questions based on a search term
-        - It return any questions for whom the search term is a substring of the question.
+    - This endpoint gets questions based on a search term
+    - It return any questions for whom the search term is a substring of the question.
 - Sample: curl -X POST -H "Content-type: application/json" --data "{\"searchTerm\": \"title\"}" http://localhost:5000/questions/search
 - Response:
         ```
@@ -177,7 +177,7 @@ The API will return three error types when requests fail:
 
 #### POST /questions
 - General:
-        - This endpoint adds a new question, It requires the question and answer text, category, and difficulty score.
+    - This endpoint adds a new question, It requires the question and answer text, category, and difficulty score.
 - Sample: curl -X POST -H "Content-type: application/json" --data "{\"question\":\"Heres a new question\",\"answer\":\"Heres a new answer\",\"difficulty\":4,\"category\":2}" http://localhost:5000/questions
 - Response:
         ```
@@ -188,7 +188,7 @@ The API will return three error types when requests fail:
 
 #### GET /categories/<category_id>/questions
 - General:
-        - This endpoint gets questions based on category, it returns name of category with id specified,
+    - This endpoint gets questions based on category, it returns name of category with id specified,
         question in the category, total number of questions in the category
 - Sample: curl http://localhost:5000/categories/1/questions
 - Response:
@@ -224,8 +224,8 @@ The API will return three error types when requests fail:
 
 #### POST /quizzes
 - General:
-    -This endpoint gets questions to play the quiz.
-    -It takes category and previous question parameters and return a random questions within the given category which is not one of the previous questions.
+    - This endpoint gets questions to play the quiz.
+    - It takes category and previous question parameters and return a random questions within the given category which is not one of the previous questions.
 - Sample: curl -X POST -H "Content-Type: application/json" --data "{\"quiz_category\": {\"type\": \"science\", \"id\": 1}, \"previous_questions\":[20]}" http://localhost:5000/quizzes
 - Response:
         ```
