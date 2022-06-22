@@ -48,7 +48,9 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_error_get_categories(self):
-        pass
+        """test /categories endpoint using PATCH method"""
+        response = self.client().patch('/categories')
+        self.assertEqual(response.status_code, 405)
 
     # <<<<<<<<<<<<=========== [2] GET /questions ==================>>>>>>>>>>>
     def test_get_questions(self):
