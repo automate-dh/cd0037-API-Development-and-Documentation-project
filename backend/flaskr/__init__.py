@@ -70,16 +70,18 @@ def create_app(test_config=None):
         categories = {category.id: category.type for category in categories}
         questions = Question.query.order_by(Question.id).all()
         formatted_questions = [question.format() for question in questions]
+        questions_in_next_page = formatted_questions[start:end]
+        current_category = {question['category'] for question in questions_in_next_page}
 
         if len(questions) < start:
             abort(404)
         else:
             return jsonify(
                 {
-                    "questions": formatted_questions[start:end],
+                    "questions": questions_in_next_page,
                     "totalQuestions": len(questions),
                     "categories": categories,
-                    "currentCategory": None
+                    "currentCategory": list(current_category)
                 }
             )
 
@@ -199,13 +201,17 @@ def create_app(test_config=None):
         category_id = data["quiz_category"]["id"]
         previous_questions_id = data["previous_questions"]
 
-        if category_id != 0:
-            questions_left_in_category = Question.query.filter(
-                Question.category == category_id).filter(
-                    Question.id.notin_(previous_questions_id)).all()
-        else:
+        if category_id == 0:
             questions_left_in_category = Question.query.filter(
                 Question.id.notin_(previous_questions_id)).all()
+        else:
+            try:
+                category_id = int(category_id)
+                questions_left_in_category = Question.query.filter(
+                    Question.category == category_id).filter(
+                        Question.id.notin_(previous_questions_id)).all()
+            except ValueError:
+                abort(400, description="Category specified is invalid: category Id should be an integer")
 
         question = random.choice(questions_left_in_category).format() if len(
             questions_left_in_category) else False

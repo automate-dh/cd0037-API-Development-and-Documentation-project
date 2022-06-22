@@ -47,6 +47,9 @@ class TriviaTestCase(unittest.TestCase):
         response = self.client().get('/categories')
         self.assertEqual(response.status_code, 200)
 
+    def test_error_get_categories(self):
+        pass
+
     # <<<<<<<<<<<<=========== [2] GET /questions ==================>>>>>>>>>>>
     def test_get_questions(self):
         """test /questions endpoint"""
@@ -63,7 +66,7 @@ class TriviaTestCase(unittest.TestCase):
         """test DELETE /questions/<int:question_id>"""
         random_question = random_question = random.choice(Question.query.all()).id
 
-    # ====>>>>> test deleting a question
+        # ====>>>>> test deleting a question
         response = self.client().delete('/questions/' + str(random_question))
         question_deleted = Question.query.get(random_question)
         self.assertEqual(response.status_code, 200)
@@ -146,6 +149,20 @@ class TriviaTestCase(unittest.TestCase):
         next_question = json_response["question"]["id"]
         self.assertEqual(response.status_code, 200)
         self.assertTrue(next_question not in previous_questions)
+
+    def test_error_post_quizzes(self):
+        """test POST /quizzes: passing in a non-integer for value of category Id"""
+        previous_questions =[22]
+        response = self.client().post('/quizzes', json={
+            "previous_questions": previous_questions,
+            "quiz_category":{
+                "type":"Science",
+                "id":"z"
+            }
+        })
+        json_response = json.loads(response.get_data(as_text=True))
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json_response['Additional info'], 'Category specified is invalid: category Id should be an integer')
 
 # Make the tests conveniently executable
 if __name__ == "__main__":
